@@ -295,8 +295,12 @@ class Compressor {
 
   func compressToPath(_ result: @escaping (Any?) -> (), _ path: String) {
     let url = URL(fileURLWithPath: path)
-    compress {
-      CGImageDestinationCreateWithURL(url as CFURL, getOutputFormat(), 1, nil)!
+    if let image = CGImageDestinationCreateWithURL(url as CFURL, getOutputFormat(), 1, nil) {
+      compress {
+        image
+      }
+    } else {
+      result(makeFlutterError())
     }
 
     Logger.logFile(path: path)
@@ -305,13 +309,21 @@ class Compressor {
 
   func compressToBytes(_ result: @escaping (Any?) -> ()) {
     let data = NSMutableData()
-    compress {
-      CGImageDestinationCreateWithData(data, getOutputFormat(), 1, nil)!
+    if let image = CGImageDestinationCreateWithData(data, getOutputFormat(), 1, nil) {
+      compress {
+        image
+      }
+    } else {
+      result(makeFlutterError())
     }
 
     Logger.logData(data: data as Data)
     result(FlutterStandardTypedData(bytes: data as Data))
   }
+
+    func makeFlutterError(code: String = "Can't load CGImage.") -> FlutterError {
+      FlutterError(code: code, message: nil, details: nil)
+    }
 
 }
 
